@@ -1,16 +1,45 @@
 <template>
-    <div class="sideUser">
-        <div class="userLogo"></div>
+    <div class="sideUser" v-for="(user, index) in allUser" v-bind:key="index">
+        <div class="userLogo" v-bind:style = user.ImageUrl></div>
         <div class="userInfo">
-            <p class="userName">berry</p>
-            <p>得分 : <span class="score">50</span></p>
+            <p class="userName" :class="{thisUser: user.name == userName}">{{user.name}}</p>
+            <p>得分 : <span class="score" v-bind:text = user.Score>0</span></p>
         </div>
     </div>
+    <p>{{allUser}}</p>
 </template>
 
 <script>
+import signalr from '../utils/signalR'
+
 export default {
-    name: 'SideUser'
+    name: 'SideUser',
+    props:{
+        userName: String
+    },
+    data (){
+        return {
+            allUser: []
+        }
+    },
+    created: function(){
+        this.InitAllUser();
+    },
+    mounted (){
+        signalr.on("GetAllUser", function(json){
+            // this.allUser = JSON.stringify(json);
+            this.allUser = json;
+            console.log(this.allUser)
+        })
+    },
+    methods: {
+        InitAllUser(){
+            signalr.invoke("GetAllUser")
+                .catch(function(err) {
+                    return console.error(err.toString());
+            });
+        }
+    }
 }
 </script>
 
@@ -35,9 +64,6 @@ export default {
         }
 
         .userInfo{
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
             .userName{
                 font-size: 20px;
             }

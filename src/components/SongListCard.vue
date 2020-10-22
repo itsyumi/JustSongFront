@@ -24,7 +24,7 @@ export default {
 function bindCheckBox(e) {  
     var cbox = e.currentTarget.parentNode.firstChild;
     cbox.checked = !cbox.checked;
-
+    this.$emit('handle', this.songListName)
     document.querySelectorAll(".songList input").forEach(function(item){
         if(item != cbox){
             item.checked = false;

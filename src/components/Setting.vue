@@ -13,7 +13,8 @@
                 <SongListCard v-for="(item, index) in songList" 
                               v-bind:key="index" 
                               :songListImg="item.songListImg" 
-                              :songListName="item.songListName">
+                              :songListName="item.songListName"
+                              @handle="handle">
                 </SongListCard>
             </div>
         </div>
@@ -25,31 +26,61 @@
 import Title from './Title'
 import GameButton from './GameButton'
 import SongListCard from './SongListCard'
+import axios from 'axios'
+import signalr from '../utils/signalR'
 
 export default {
     name: 'Setting',
     components:{
         Title, GameButton, SongListCard
     },
-    methods:{
-        startGame
-    },
     data (){
         return{
             title: '遊戲設定',
-            songList:[
-                {songListImg: "#", songListName: "國語經典歌曲1"},
-                {songListImg: "#", songListName: "國語經典歌曲2"},
-                {songListImg: "#", songListName: "國語經典歌曲3"},
-                {songListImg: "#", songListName: "國語經典歌曲4"},
-                {songListImg: "#", songListName: "國語經典歌曲5"},
-            ]
+            songList:[],
+            chartTitle: '',
+            createGroupCheck: false,
+            userName: '',
+            userPath: ''
         }
-    }
-}
+    },
+    watch: {
 
-function startGame(){
-    this.$router.push('/game');
+    },
+    methods:{
+        startGame: function(){
+            if (this.chartTitle != ''){
+                signalr.invoke("CreateGroup", this.userName, this.userPath, this.chartTitle)
+                    .catch(function(err) {
+                        return console.error(err.toString());
+                });
+                this.$router.push({name: 'Game', params: {userName: this.userName}});
+            }else{
+                alert('請選擇歌單');
+            }
+        },
+        handle: function(value){
+            this.chartTitle = value;
+        }
+    },
+    created(){
+        this.userName = this.$route.params.userName;
+        this.userPath = this.$route.params.userPath;
+        axios.get('https://localhost:44357/api/chart/GetChartList')
+            .then(res => {
+                console.log(res)
+                for(var item of res.data){
+                    let chartList = {songListImg: item.imageUrl, songListName: item.title}
+                    this.songList.push(chartList);
+                }
+                
+            }).catch(err => console.log(err));
+
+        signalr.start().then(console.log(signalr.state));
+    },
+    mounted(){
+        console.log(signalr.state);
+    }
 }
 
 </script>

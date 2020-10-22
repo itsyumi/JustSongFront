@@ -27,10 +27,10 @@ export default {
     },
     methods:{
         updateUserLogo: function (e) {
-            // console.log(e.target.querySelector('.userLogo').style.backgroundImage);
             let child = e.target.querySelector('.userLogo');
             if (child != null){
                 document.getElementById('userLogo').style.backgroundImage = child.style.backgroundImage;
+                this.$emit('handle', child.style.backgroundImage);
             }else{
                 document.getElementById('userLogo').style.backgroundImage = e.target.style.backgroundImage;
             }

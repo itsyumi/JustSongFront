@@ -1,7 +1,7 @@
 <template>
     <div class="game">
         <div class="sideMenu">
-            <SideUser></SideUser>
+            <SideUser :userName="userName"></SideUser>
         </div>
         <div class="mainGame">
             <div class="prepareTime" id="prepareTime" v-text="preparedTime" v-if="preparedTime!=0"></div>
@@ -12,18 +12,15 @@
                 <div class="answer">
                     <span class="title" v-on:click="playSong">答案</span>
                     <textarea name="" id="ansArea" rows="5" readonly=true></textarea>
-                    <input type="text" placeholder="請輸入答案" @keyup.enter="keyAnswer">
+                    <input type="text" placeholder="請輸入答案" @keyup.enter="sendAnswer">
                 </div>
                 <div class="chatroom">
                     <span class="title">聊天室</span>
                     <textarea name="" id="chatArea" rows="5"></textarea>
-                    <input type="text" placeholder="發送訊息" @keyup.enter="keyChat">
+                    <input type="text" placeholder="發送訊息" @keyup.enter="sendChat">
                 </div>
             </div>
-            <div class="iframeBlock">
-                <!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/rCARd-7JfAg?rel=0&autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
-                <!-- <iframe width="1920" height="947" src="https://widget.kkbox.com/v1/?id=0t-Nj7uwKUfrAI0IiN&amp;type=song&amp;terr=tw&amp;lang=en" frameborder="0" scrolling="no" allow=autoplay></iframe> -->
-                <!-- <iframe width="300" height="100" src="https://widget.kkbox.com/v1/?id=DXRGzwVSg_DL8wrWj_&amp;type=song&amp;terr=tw&amp;lang=en&amp;autoplay=true" allow="autoplay" frameborder="0" scrolling="no"></iframe> -->
+            <div class="iframeBlock" v-on:click="playSong">
             </div>
         </div>
     </div>
@@ -31,34 +28,51 @@
 
 <script>
 import SideUser from './SideUser'
+import signalr from '../utils/signalR'
 
 export default {
     name: 'Game',
     components:{
         SideUser
     },
+    data() {
+        return {
+            preparedTime: 3,
+            userName: '',
+            // allUser: [],
+            chartName: '',
+            connection: null,
+            ready: false,
+            kkbox: '',
+            onPlay: false
+        }
+    },
+    watch:{
+        onPlay: function(value){
+            console.log('123', value)
+            if(value){
+                this.prepare();
+            }
+        }
+    },
+    created: function(){
+        var name = this.$route.params.userName;
+        this.userName = name;
+        // signalr.start().then(this.ready=true);
+        console.log(signalr.state);
+        this.GetMusic();
+    },
     methods: {
-        keyAnswer(e){
-            document.getElementById('ansArea').value += e.target.value + '\n';
-        },
-        keyChat(e){
-            document.getElementById('chatArea').value += e.target.value + '\n';
-        },
         playSong(){
-            // var iframe = document.querySelector('iframe');
-            var src = "https://widget.kkbox.com/v1/?id=DXRGzwVSg_DL8wrWj_&type=song&terr=tw&lang=en&autoplay=true";
             var iframe = document.querySelector('.iframeBlock');
             let item = document.createElement("iframe");
             item.setAttribute("width", "300");
             item.setAttribute("height", "100");
-            item.setAttribute("src", src);
-            item.setAttribute("allow", "autoplay 'src'");
+            item.setAttribute("src", this.kkbox);
+            item.setAttribute("allow", "autoplay");
             item.setAttribute("frameborder", 0);
             item.setAttribute("scrolling", "no");
             iframe.appendChild(item);
-            console.log(item.contentWindow.document)
-
-            iframe.play();
         },
         prepare(){
             document.getElementById("prepareTime").style.display = "block";
@@ -70,20 +84,49 @@ export default {
                     vm.preparedTime = time-i;
                     if(time-i == 0){
                         vm.isRunning = true;
+                        // document.querySelector("audio-player");
                         vm.playSong();
                     }
                 }, 1000 * i);
             }
-            
         },
+        sendChat(e){
+            signalr.invoke("SendChat", `${e.target.value}`)
+                            .catch(function (err) {
+                                return console.error(err.toString());
+                            });
+            e.target.value = '';
+        },
+        sendAnswer(e){
+            signalr.invoke("Answer", `${e.target.value}`)
+                            .catch(function(err) {
+                                return console.error(err.toString());
+                            });
+        },
+        GetMusic(){
+            signalr.invoke("GetMusic")
+                            .catch(function(err) {
+                                return console.error(err.toString());
+                            });
+        }
     },
     mounted (){
-        this.prepare();
-    },
-    data() {
-        return {
-            preparedTime: 3,
-        }
+        console.log(signalr.state)
+
+        signalr.on("GetMusic", function(json){
+            this.onPlay = true;
+            this.kkbox = json;
+            console.log(this.kkbox)
+            console.log(this.onPlay);
+        })
+
+        signalr.on("ReceiveChat", function(json){
+            document.getElementById('chatArea').value += json + '\n';
+        })
+
+        signalr.on("AnswerMusic", function(json){
+            document.getElementById('ansArea').value += json + '\n';
+        })
     }
 }
 
@@ -193,11 +236,5 @@ export default {
                 }
             }
         }
-    }
-
-    .iframeBlock{
-        // position: absolute;
-        // visibility: hidden;
-        // top: 0;
     }
 </style>

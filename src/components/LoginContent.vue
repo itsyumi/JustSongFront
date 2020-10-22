@@ -3,7 +3,7 @@
         <Title :title='title'></Title>
         <div class="userLogin">
             <h3>快速開始</h3>
-            <div class="userLogo" id="userLogo">
+            <div class="userLogo" id="userLogo" v-bind:style="{ backgroundImage: userPath }">
                 <div class="camera" @click="showLogo">
                     <span class="iconify" data-icon="icomoon-free:camera" data-inline="false"></span>
                 </div>
@@ -13,9 +13,10 @@
                     <span class="iconify" data-icon="fa-regular:user" data-inline="false"></span>
                     <span>暱稱 : </span>
                     <label class="text">
-                        <input type="text" maxlength="20" placeholder="您的暱稱">
+                        <input v-model="userName" type="text" maxlength="20" placeholder="您的暱稱">
                     </label>
                 </div>
+                <span v-if="checkName"  style="color: red; position: absolute">❌ 請輸入暱稱</span>
             </div>
         </div>
         <GameButton :loadBtn='startGame'></GameButton>
@@ -25,7 +26,9 @@
         <div class="modal-content">
             <span class="close" @click="closeModal">&times;</span>
             <div class="chooseBlock">
-                <LogoCard :closeModal="closeModal"></LogoCard>
+                <LogoCard :closeModal="closeModal"
+                            @handle="handle">
+                </LogoCard>
             </div>
         </div>
     </div>
@@ -42,15 +45,37 @@ export default {
     components:{
         LogoCard, GameButton, Title
     },
+    watch:{
+        userPath: function(){
+            console.log(this.userPath);
+        }
+    },
     methods:{
         showLogo,
         closeModal,
-        startGame
+        handle: function(value){
+            this.userPath = value;
+        },
+        startGame: function(){
+            console.log(this.userPath);
+            if (this.userName == ''){
+                this.checkName = true;
+            }else{
+                this.checkName = false;
+                this.$router.push({ name:'Set', params:{ userName: this.userName,
+                                                            userPath: this.userPath }});
+            }
+        }
     },
     data (){
         return{
-            title: '開始遊戲'
+            title: '開始遊戲',
+            userName: '',
+            userPath: `url(${require('../assets/Images/5.jpg')})`,
+            checkName: false
         }
+    },
+    created(){
     }
 }
 
@@ -61,9 +86,6 @@ function closeModal(){
     document.getElementById("logoModal").style.display = 'none';
 }
 
-function startGame(){
-    this.$router.push('/game');
-}
 </script>
 
 <style lang="scss" scoped>
@@ -73,27 +95,6 @@ function startGame(){
         height: 480px;
         margin: 10px 0;
         border-radius: .8rem;
-
-        // .title{
-        //     padding: 20px 0;
-        //     height: 70px;
-        //     display: flex;
-        //     align-items: center;
-
-        //     .gtitle{
-        //         width: 300px;
-        //         height: 50px;
-        //         border-radius: .5rem;
-        //         box-shadow: 4px 4px #ffdead;
-        //         background-color: #fce6c9;
-        //         margin: 0 auto;
-        //         & h1{
-        //             color: #6495ed;
-        //             line-height: 50px;
-        //             margin: 0;
-        //         }
-        //     }
-        // }
 
         .userLogin{
             width: 400px;
@@ -111,7 +112,7 @@ function startGame(){
                 border-radius: 50%;
                 box-shadow: 0 0 0 3px #043173;
                 margin: 0 auto;
-                background-image: url('../assets/Images/0.jpg');
+                // background-image: url('../assets/Images/0.jpg');
                 background-size: 150%;
                 background-position: center;
                 position: relative;
@@ -137,7 +138,6 @@ function startGame(){
                         height: 24px;
                         line-height: 40px;
                         color: #fff;
-                        
                     }
                 }
             }
